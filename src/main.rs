@@ -3,11 +3,9 @@ use player::*;
 
 use std::f32::consts::PI;
 
-use bevy_rapier3d::prelude::*;
-use bevy_rapier3d::rapier::prelude::MassProperties;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
-
+use bevy_rapier3d::prelude::*;
 
 use bevy::{
     prelude::*,
@@ -26,20 +24,20 @@ struct Configuration {
 #[derive(Component)]
 struct Shape;
 
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .init_resource::<Configuration>() // `ResourceInspectorPlugin` won't initialize the resource
         //.insert_resource(FixedTime)
         .register_type::<Configuration>() // you need to register your type to display it
-        .add_plugins(ResourceInspectorPlugin::<Configuration>::default())
-        .add_plugin(PlayerPlugin)
+        .add_plugins((
+            ResourceInspectorPlugin::<Configuration>::default(),
+            PlayerPlugin,
+            WorldInspectorPlugin::default(),
+            RapierPhysicsPlugin::<NoUserData>::default(),
+        ))
         // also works with built-in resources, as long as they are `Reflect`
-        .add_plugins(WorldInspectorPlugin::default())
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_systems(Startup, setup)
-
         .run();
 }
 
@@ -51,7 +49,6 @@ fn setup(
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     let debug_material = materials.add(StandardMaterial {
         base_color_texture: Some(images.add(uv_debug_texture())),
         ..default()
@@ -83,7 +80,14 @@ fn setup(
                 ..default()
             },
             Shape,
-        ));
+        ))
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::capsule_x(0.4, 0.4 / 2.))
+        .insert(Velocity::default())
+        .insert(ExternalForce::default())
+        .insert(ColliderMassProperties::Density(5.0))
+        .insert(GravityScale::default())
+        .insert(Grabbable::default());
     }
 
     commands.spawn(PointLightBundle {
@@ -104,11 +108,8 @@ fn setup(
         ..default()
     });
 
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
-        ..default()
-    });
 }
+
 fn uv_debug_texture() -> Image {
     const TEXTURE_SIZE: usize = 8;
 
