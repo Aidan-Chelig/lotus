@@ -324,7 +324,7 @@ fn player_move(
             }
             if (keys.just_pressed(KeyCode::Space)) {
                 if state.grounded {
-                    y_velocity += tweak!(1000.0)
+                    y_velocity += tweak!(2000.0)
                 }
             }
 

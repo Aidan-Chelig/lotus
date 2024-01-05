@@ -6,6 +6,7 @@ use std::f32::consts::PI;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 use bevy_rapier3d::prelude::*;
+use bevy_xpbd_3d;
 
 use bevy::{
     prelude::*,
@@ -26,7 +27,7 @@ struct Shape;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, bevy_xpbd_3d::prelude::PhysicsPlugins::default()))
         .init_resource::<Configuration>() // `ResourceInspectorPlugin` won't initialize the resource
         //.insert_resource(FixedTime)
         .register_type::<Configuration>() // you need to register your type to display it
@@ -53,6 +54,29 @@ fn setup(
         base_color_texture: Some(images.add(uv_debug_texture())),
         ..default()
     });
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Plane::from_size(8.0))),
+            transform: Transform::from_xyz(0., 0.1, 0.),
+            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            ..default()
+        },
+        bevy_xpbd_3d::prelude::RigidBody::Static,
+        bevy_xpbd_3d::prelude::Collider::cuboid(8.0, 0.002, 8.0),
+    ));
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            ..default()
+        },
+        bevy_xpbd_3d::prelude::RigidBody::Dynamic,
+        bevy_xpbd_3d::prelude::Position(Vec3::Y * 4.0),
+        bevy_xpbd_3d::prelude::AngularVelocity(Vec3::new(2.5, 3.4, 1.6)),
+        bevy_xpbd_3d::prelude::Collider::cuboid(1.0, 1.0, 1.0),
+    ));
 
     let shapes = [
         meshes.add(shape::Cube::default().into()),
